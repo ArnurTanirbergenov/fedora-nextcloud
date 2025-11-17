@@ -1,0 +1,30 @@
+---
+- name: Update all packages
+  dnf:
+    name: '*'
+    state: latest
+    update_cache: yes
+
+- name: Install base utilities
+  dnf:
+    name:
+      - dnf-utils
+      - nano
+      - wget
+      - curl
+      - git
+      - tar
+      - unzip
+    state: present
+
+- name: Enable and start SSH
+  systemd:
+    name: sshd
+    state: started
+    enabled: yes
+
+- name: Enable and start firewalld
+  systemd:
+    name: firewalld
+    state: started
+    enabled: yes

@@ -1,0 +1,111 @@
+---
+- name: SIS3 debug
+  debug:
+    msg: "SIS3 role is running"
+
+# Обновление всех пакетов
+- name: Update all packages
+  become: yes
+  dnf:
+    name: "*"
+    state: latest
+
+# Установка базовых утилит
+- name: Install base utilities
+  become: yes
+  dnf:
+    name:
+      - vim
+      - curl
+      - wget
+      - git
+      - unzip
+      - tar
+    state: present
+
+# Установка и запуск SSH
+- name: Enable and start SSH
+  become: yes
+  systemd:
+    name: sshd
+    state: started
+    enabled: yes
+
+# Установка и запуск firewalld
+- name: Enable and start firewalld
+  become: yes
+  systemd:
+    name: firewalld
+    state: started
+    enabled: yes
+
+# Открытие SSH порта в firewall
+- name: Open SSH port in firewall
+  become: yes
+  firewalld:
+    service: ssh
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+# Создание директорий для Nextcloud и MariaDB
+- name: Ensure Nextcloud web directory exists
+  become: yes
+  file:
+    path: /var/www/html/nextcloud
+    state: directory
+    owner: nextcloudsvc
+    group: nextcloud
+    mode: "0755"
+
+- name: Ensure Nextcloud data directory exists
+  become: yes
+  file:
+    path: /srv/nextcloud_data
+    state: directory
+    owner: nextcloudsvc
+    group: nextcloud
+    mode: "0755"
+
+- name: Ensure MariaDB data directory exists
+  become: yes
+  file:
+    path: /var/lib/mysql
+    state: directory
+    owner: mariadbsvc
+    group: mariadb
+    mode: "0755"
+
+- name: Ensure web root directory exists
+  become: yes
+  file:
+    path: /var/www/html
+    state: directory
+    owner: websvcs
+    group: webserver
+    mode: "0755"
+
+- name: Ensure backups directory exists
+  become: yes
+  file:
+    path: /var/backups
+    state: directory
+    owner: backupsys
+    group: backup
+    mode: "0755"
+
+# Настройка sudoers для autobot (SIS3 включает управление сервисами)
+- name: Configure sudoers for autobot
+  become: yes
+  copy:
+    content: "autobot ALL=(ALL) NOPASSWD: /bin/systemctl restart nginx, /bin/systemctl restart mariadb"
+    dest: /etc/sudoers.d/autobot
+    mode: "0440"
+
+# Добавление пользователя в wheel группу
+- name: Add user arnur to wheel group
+  become: yes
+  user:
+    name: arnur
+    groups: wheel
+    append: yes

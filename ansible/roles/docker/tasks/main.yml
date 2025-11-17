@@ -1,0 +1,50 @@
+---
+- name: Ensure docker is installed
+  become: yes
+  dnf:
+    name: docker
+    state: present
+
+- name: Ensure python3-pip is installed
+  become: yes
+  dnf:
+    name: python3-pip
+    state: present
+
+- name: Ensure docker Python module is installed
+  pip:
+    name: docker
+    executable: pip3
+
+- name: Ensure docker service is started and enabled
+  become: yes
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Ensure Nextcloud data directory exists
+  become: yes
+  file:
+    path: /srv/nextcloud_data
+    state: directory
+    owner: 33
+    group: 33
+    mode: '0770'
+
+- name: Pull Nextcloud Docker image
+  docker_image:
+    name: arnurio/nextcloud-project
+    tag: "1.0"
+    source: pull
+
+- name: Run Nextcloud container
+  docker_container:
+    name: nextcloud
+    image: arnurio/nextcloud-project:1.0
+    state: started
+    restart_policy: always
+    ports:
+      - "8080:80"
+    volumes:
+      - /srv/nextcloud_data:/var/www/html/data

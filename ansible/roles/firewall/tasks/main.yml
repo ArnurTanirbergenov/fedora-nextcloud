@@ -1,0 +1,26 @@
+---
+- name: Open SSH port
+  firewalld:
+    service: ssh
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Open HTTP port
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Open HTTPS port
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Reload firewalld
+  become: yes
+  command: firewall-cmd --reload
+

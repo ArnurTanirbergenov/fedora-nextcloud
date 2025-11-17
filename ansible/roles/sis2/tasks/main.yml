@@ -1,0 +1,90 @@
+---
+- name: Create required groups
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - admin
+    - auditor
+    - automation_bot
+    - nextcloud
+    - mariadb
+    - webserver
+    - backup
+    - cloudusers
+
+- name: Create required users
+  user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups }}"
+    shell: /bin/bash
+    create_home: yes
+  loop:
+    - { name: cloudadmin, groups: admin }
+    - { name: cloudauditor, groups: auditor }
+    - { name: autobot, groups: automation_bot }
+    - { name: nextcloudsvc, groups: nextcloud }
+    - { name: mariadbsvc, groups: mariadb }
+    - { name: websvcs, groups: webserver }
+    - { name: backupsys, groups: backup }
+    - { name: clouduser, groups: cloudusers }
+
+- name: Create required directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: '0755'
+  loop:
+    - { path: /var/www/html/nextcloud, owner: nextcloudsvc, group: nextcloud }
+    - { path: /srv/nextcloud_data, owner: nextcloudsvc, group: nextcloud }
+    - { path: /var/lib/mysql, owner: mariadbsvc, group: mariadb }
+    - { path: /var/www/html, owner: websvcs, group: webserver }
+    - { path: /var/backups, owner: backupsys, group: backup }
+
+- name: Configure sudoers for admin group
+  copy:
+    dest: /etc/sudoers.d/admins
+    content: "%admin ALL=(ALL) ALL"
+    mode: '0440'
+
+- name: Configure sudoers for autobot
+  copy:
+    dest: /etc/sudoers.d/autobot
+    content: "autobot ALL=(ALL) NOPASSWD: /bin/systemctl restart nginx, /bin/systemctl restart mariadb"
+    mode: '0440'
+
+- name: Add user arnur to wheel group
+  user:
+    name: arnur
+    groups: wheel
+    append: yes
+
+- name: Enable and start SSH service
+  systemd:
+    name: sshd
+    enabled: yes
+    state: started
+
+- name: Open SSH port in firewall
+  firewalld:
+    service: ssh
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Reload firewall
+  command: firewall-cmd --reload
+  become: yes
+
+- name: Generate SSH key for autobot
+  openssh_keypair:
+    path: /home/autobot/.ssh/id_ed25519
+    type: ed25519
+    owner: autobot
+    group: automation_bot
+    mode: '0600'
+    force: no
+  become: yes
+  become_user: autobot
