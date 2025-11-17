@@ -1,0 +1,91 @@
+---
+- name: SIS4 debug
+  debug:
+    msg: "SIS4 role is running"
+
+# Установка и обновление пакетов
+- name: Update all packages
+  become: yes
+  dnf:
+    name: "*"
+    state: latest
+
+- name: Install required packages for SIS4
+  become: yes
+  dnf:
+    name:
+      - nginx
+      - mariadb-server
+      - php
+      - php-fpm
+      - php-mysqlnd
+      - php-gd
+      - php-json
+      - php-curl
+      - php-xml
+      - php-mbstring
+      - wget
+      - unzip
+    state: present
+
+# Запуск и включение сервисов
+- name: Ensure nginx is started and enabled
+  become: yes
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Ensure mariadb is started and enabled
+  become: yes
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Ensure php-fpm is started and enabled
+  become: yes
+  systemd:
+    name: php-fpm
+    state: started
+    enabled: yes
+
+# Настройка firewall для HTTP/HTTPS
+- name: Open HTTP port in firewall
+  become: yes
+  firewalld:
+    service: http
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Open HTTPS port in firewall
+  become: yes
+  firewalld:
+    service: https
+    permanent: yes
+    state: enabled
+    immediate: yes
+
+- name: Reload firewalld
+  become: yes
+  command: firewall-cmd --reload
+
+# Создание директории для Nextcloud и права
+- name: Ensure Nextcloud web directory exists
+  become: yes
+  file:
+    path: /var/www/html/nextcloud
+    state: directory
+    owner: nextcloudsvc
+    group: nextcloud
+    mode: "0755"
+
+- name: Ensure Nextcloud data directory exists
+  become: yes
+  file:
+    path: /srv/nextcloud_data
+    state: directory
+    owner: nextcloudsvc
+    group: nextcloud
+    mode: "0755"

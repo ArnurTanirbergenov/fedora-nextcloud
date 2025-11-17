@@ -1,0 +1,48 @@
+---
+# Создание групп
+- name: Create groups
+  group:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - admin
+    - auditor
+    - automation_bot
+    - nextcloud
+    - mariadb
+    - webserver
+    - backup
+    - cloudusers
+
+# Создание пользователей и добавление в группы
+- name: Create users
+  user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups }}"
+    shell: /bin/bash
+    create_home: yes
+    state: present
+  loop:
+    - { name: cloudadmin, groups: "admin" }
+    - { name: cloudauditor, groups: "auditor" }
+    - { name: autobot, groups: "automation_bot" }
+    - { name: nextcloudsvc, groups: "nextcloud" }
+    - { name: mariadbsvc, groups: "mariadb" }
+    - { name: websvcs, groups: "webserver" }
+    - { name: backupsys, groups: "backup" }
+    - { name: clouduser, groups: "cloudusers" }
+
+# Создание директорий с правильными владельцами
+- name: Create directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode | default('0755') }}"
+    recurse: yes
+  loop:
+    - { path: /var/www/html/nextcloud, owner: nextcloudsvc, group: nextcloud }
+    - { path: /var/lib/mysql, owner: mariadbsvc, group: mariadb }
+    - { path: /var/www/html, owner: websvcs, group: webserver }
+    - { path: /var/backups, owner: backupsys, group: backup }

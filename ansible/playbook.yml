@@ -1,0 +1,15 @@
+---
+- name: Setup Fedora Nextcloud Cloud
+  hosts: cloud
+  become: true
+  roles:
+    - base
+    - users
+    - packages
+    - firewall
+    - docker
+    - nextcloud
+    - timers
+    - sis2
+    - sis3
+    - sis4

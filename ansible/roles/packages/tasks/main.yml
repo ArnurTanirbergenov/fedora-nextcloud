@@ -1,0 +1,63 @@
+---
+# Обновление системы
+- name: Update all packages
+  dnf:
+    name: '*'
+    state: latest
+    update_cache: yes
+
+# Установка необходимых пакетов
+- name: Install packages
+  dnf:
+    name:
+      - dnf-utils
+      - nano
+      - wget
+      - curl
+      - git
+      - tar
+      - unzip
+      - nginx
+      - mariadb-server
+      - mariadb
+      - php
+      - php-fpm
+      - php-mysqlnd
+      - php-xml
+      - php-gd
+      - php-mbstring
+      - php-intl
+      - php-json
+      - php-zip
+      - php-curl
+      - php-ldap
+      - php-bz2
+      - php-gmp
+      - firewalld
+      - fail2ban
+      - policycoreutils-python-utils
+      - certbot
+      - python3-certbot-nginx
+      - rsync
+      - python3
+      - pip
+      - sshpass
+      - expect
+      - bzip2
+      - libxml2
+      - libzip
+      - ImageMagick
+    state: present
+
+# Запуск и включение сервисов
+- name: Enable and start services
+  systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - nginx
+    - mariadb
+    - php-fpm
+    - firewalld
+    - fail2ban
