@@ -1,38 +1,29 @@
-name: Deploy Fedora Nextcloud via Ansible
+name: Deploy Fedora Nextcloud
 
 on:
   push:
     branches:
       - ansible
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install Ansible
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.8.1
+        uses: webfactory/ssh-agent@v0.8.2
         with:
           ssh-private-key: ${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}
 
-      - name: Test SSH connection
-        run: ssh -o StrictHostKeyChecking=no arnur@10.0.2.15 'echo Connection OK'
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible sshpass
 
-      - name: Run Ansible playbook
+      - name: Run Ansible Playbook
         run: |
           cd ansible
-          ansible-playbook playbook.yml -i inventory.ini --tags docker --ask-become-pass
+          ansible-playbook -i inventory.ini playbook.yml --tags docker --ask-become-pass
