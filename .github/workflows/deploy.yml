@@ -1,0 +1,32 @@
+name: Deploy Fedora Nextcloud
+
+on:
+  push:
+    branches:
+      - ansible
+
+jobs:
+  ansible-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible sshpass
+
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "$ANSIBLE_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 10.0.2.15 >> ~/.ssh/known_hosts
+
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook ansible/playbook.yml -i ansible/inventory.ini --ask-become-pass
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
