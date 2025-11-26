@@ -8,8 +8,6 @@
     - packages
     - firewall
     - docker
-    - nextcloud
-    - timers
     - sis2
     - sis3
     - sis4
