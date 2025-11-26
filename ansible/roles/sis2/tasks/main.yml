@@ -84,7 +84,7 @@
     type: ed25519
     owner: autobot
     group: automation_bot
-    mode: '0600'
+    mode: '0700'
     force: no
   become: yes
   become_user: autobot
