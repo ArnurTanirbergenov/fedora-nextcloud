@@ -85,6 +85,6 @@
     owner: autobot
     group: automation_bot
     mode: '0700'
-    force: no
+    force: yes
   become: yes
   become_user: autobot
