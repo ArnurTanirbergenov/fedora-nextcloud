@@ -1,0 +1,17 @@
+---
+- name: Restart journald
+  service:
+    name: systemd-journald
+    state: restarted
+
+- name: Restart docker
+  service:
+    name: docker
+    state: restarted
+- name: Restart auditd
+  service:
+    name: auditd
+    state: restarted
+  # In some RHEL/Fedora versions, restarting auditd via systemctl is blocked. 
+  # If this fails, use shell command: service auditd restart OR augenrules --load
+  ignore_errors: yes

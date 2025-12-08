@@ -3,11 +3,7 @@
   hosts: cloud
   become: true
   roles:
-    - base
-    - users
-    - packages
-    - firewall
     - docker
     - sis2
     - sis3
-    - sis4
+    - logging_audit
