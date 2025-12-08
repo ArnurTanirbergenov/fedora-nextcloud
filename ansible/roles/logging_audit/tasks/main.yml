@@ -1,0 +1,89 @@
+---
+# Fix: Create the file with the [Journal] header if it's missing
+- name: Ensure journald.conf exists with [Journal] section
+  copy:
+    dest: /etc/systemd/journald.conf
+    content: |
+      [Journal]
+    force: no  # Only creates the file if it doesn't exist; preserves existing files
+    mode: '0644'
+
+# Then configure the setting (works for both new and existing files)
+- name: Ensure journald storage is persistent
+  lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: '^#?Storage='
+    line: 'Storage=persistent'
+    state: present
+    insertafter: '\[Journal\]' # Ensures it goes under the header
+  notify: Restart journald
+- name: Create /etc/docker directory
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: Configure Docker to use journald driver
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "journald"
+      }
+  notify: Restart docker
+
+# TASK 2: Create Journaling Toolset
+- name: Create log search script
+  copy:
+    dest: /usr/local/bin/log-search
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      # Usage: log-search "search_term"
+      if [ -z "$1" ]; then
+        echo "Usage: $0 <search_term>"
+        exit 1
+      fi
+      echo "Searching journal for: $1"
+      journalctl | grep "$1"
+
+- name: Create service log monitor script
+  copy:
+    dest: /usr/local/bin/service-log
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      # Usage: service-log service_name
+      if [ -z "$1" ]; then
+        echo "Usage: $0 <service_name>"
+        exit 1
+      fi
+      echo "Tailing logs for service: $1"
+      journalctl -u "$1" -f
+
+- name: Create journal disk usage script
+  copy:
+    dest: /usr/local/bin/disk-usage-log
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      echo "Checking Journal Disk Usage..."
+      journalctl --disk-usage
+
+
+# TASK 3: Setup Audit Events for Sudoers
+# 1. Remove the default rules file that might contain "-a never,task"
+- name: Remove default audit.rules file
+  file:
+    path: /etc/audit/rules.d/audit.rules
+    state: absent
+  notify: Restart auditd
+
+# 2. Deploy our clean rules in a dedicated file
+- name: Deploy custom audit rules for sudoers
+  copy:
+    dest: /etc/audit/rules.d/sis6.rules
+    content: |
+      -w /etc/sudoers -p wa -k sudoers_change
+      -w /etc/sudoers.d/ -p wa -k sudoers_change
+  notify: Restart auditd
