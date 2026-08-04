@@ -1,0 +1,47 @@
+name: Deploy Fedora Nextcloud
+
+on:
+  push:
+    branches:
+      - ansible
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      # 1️⃣ Клонируем репозиторий (сам runner уже находит код)
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Устанавливаем SSH ключ для подключения к VM
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ANSIBLE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+        shell: bash
+
+      # 3️⃣ Устанавливаем известные хосты
+      - name: Add VM to known_hosts
+        run: |
+          ssh-keyscan -H 10.0.2.15 >> ~/.ssh/known_hosts
+        shell: bash
+
+      # 4️⃣ Проверяем доступность хоста
+      - name: Test SSH connectivity
+        run: ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no arnur@10.0.2.15 "echo SSH OK"
+
+      # 5️⃣ Устанавливаем Ansible (на self-hosted runner уже должен быть Python)
+      - name: Install Ansible
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install ansible
+        shell: bash
+
+      # 6️⃣ Запускаем плейбук
+      - name: Run Ansible playbook
+        run: |
+          cd ansible
+          ansible-playbook playbook.yml --inventory inventory.ini --ask-become-pass
+        shell: bash
